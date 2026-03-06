@@ -11,9 +11,34 @@ import { selectGoalsMap, updateGoal as updateGoalRedux } from '../../../store/go
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import DatePicker from '../../components/DatePicker'
 import { Theme } from '../../components/Theme'
+import EmojiPicker from '../../components/EmojiPicker'
+import { BaseEmoji } from 'emoji-mart'
 
 type Props = { goal: Goal }
 export function GoalManager(props: Props) {
+  const [emojiPickerIsOpen, setEmojiPickerIsOpen] = useState(false)
+  const [icon, setIcon] = useState<string | null>(props.goal.icon ?? null)
+
+  const hasIcon = () => icon != null
+
+  const pickEmojiOnClick = (emoji: BaseEmoji, event: React.MouseEvent) => {
+    event.stopPropagation()
+
+    const updatedGoal: Goal = {
+      ...props.goal,
+      icon: emoji.native,
+      name: name ?? props.goal.name,
+      targetDate: targetDate ?? props.goal.targetDate,
+      targetAmount: targetAmount ?? props.goal.targetAmount,
+    }
+
+    setIcon(emoji.native)
+    setEmojiPickerIsOpen(false)
+
+    dispatch(updateGoalRedux(updatedGoal))
+    updateGoalApi(props.goal.id, updatedGoal)
+  }
+
   const dispatch = useAppDispatch()
 
   const goal = useAppSelector(selectGoalsMap)[props.goal.id]
@@ -77,6 +102,9 @@ export function GoalManager(props: Props) {
 
   return (
     <GoalManagerContainer>
+      <h1 onClick={() => setEmojiPickerIsOpen(!emojiPickerIsOpen)}>
+        {icon ?? "🎯"}
+      </h1>
       <NameInput value={name ?? ''} onChange={updateNameOnChange} />
 
       <Group>
@@ -99,6 +127,13 @@ export function GoalManager(props: Props) {
           <StringValue>{props.goal.balance}</StringValue>
         </Value>
       </Group>
+      <EmojiPickerContainer
+        isOpen={emojiPickerIsOpen}
+        hasIcon={hasIcon()}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <EmojiPicker onClick={pickEmojiOnClick} />
+      </EmojiPickerContainer>
 
       <Group>
         <Field name="Date Created" icon={faCalendarAlt} />
@@ -121,6 +156,13 @@ const Field = (props: FieldProps) => (
     <FieldName>{props.name}</FieldName>
   </FieldContainer>
 )
+
+const EmojiPickerContainer = styled.div<EmojiPickerContainerProps>`
+  display: ${(props) => (props.isOpen ? 'flex' : 'none')};
+  position: absolute;
+  top: ${(props) => (props.hasIcon ? '10rem' : '2rem')};
+  left: 0;
+`
 
 const GoalManagerContainer = styled.div`
   display: flex;
